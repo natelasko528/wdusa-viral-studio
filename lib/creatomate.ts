@@ -18,10 +18,16 @@ function authHeadersRead(): HeadersInit {
 export type CreatomateRenderCreate = {
   template_id: string;
   modifications?: Record<string, unknown>;
+  render_scale?: number;
+  max_width?: number;
+  max_height?: number;
+  webhook_url?: string;
+  metadata?: string;
 };
 
-export async function createRender(
-  body: CreatomateRenderCreate,
+/** Full request body for POST /v2/renders (template + modifications or raw RenderScript). */
+export async function createRenderRequest(
+  body: Record<string, unknown>,
 ): Promise<{ id: string }> {
   const res = await fetch(`${CREATOMATE_API}/renders`, {
     method: "POST",
@@ -35,7 +41,12 @@ export async function createRender(
   return { id: data.id };
 }
 
-/** https://creatomate.com/docs/api/reference/rest-api/the-render-object */
+export async function createRender(
+  body: CreatomateRenderCreate,
+): Promise<{ id: string }> {
+  return createRenderRequest(body as unknown as Record<string, unknown>);
+}
+
 export type CreatomateRenderStatus = {
   id: string;
   status?: string;
@@ -56,7 +67,6 @@ export async function getRender(
   return JSON.parse(text) as CreatomateRenderStatus;
 }
 
-/** Map Creatomate status string to our RenderJobStatus terminal states. */
 export function mapCreatomateStatus(
   status: string | undefined,
 ): "rendering" | "succeeded" | "failed" | null {

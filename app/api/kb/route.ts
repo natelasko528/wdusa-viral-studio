@@ -6,11 +6,20 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const profile = searchParams.get("profile") ?? "nate_landing";
     const category = searchParams.get("category");
+    const q = searchParams.get("q")?.trim();
 
     const facts = await prisma.kbFact.findMany({
       where: {
         campaignProfiles: { has: profile },
         ...(category ? { category } : {}),
+        ...(q
+          ? {
+              OR: [
+                { content: { contains: q, mode: "insensitive" } },
+                { key: { contains: q, mode: "insensitive" } },
+              ],
+            }
+          : {}),
       },
       orderBy: [{ category: "asc" }, { key: "asc" }],
       take: 500,

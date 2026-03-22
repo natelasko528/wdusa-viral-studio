@@ -25,6 +25,19 @@ enum ScheduledPostStatus {
   failed
 }
 
+enum BrowserTaskType {
+  create_template
+  clone_template
+  export_renderscript
+}
+
+enum BrowserTaskStatus {
+  queued
+  running
+  succeeded
+  failed
+}
+
 model SourcePage {
   id         String     @id @default(cuid())
   url        String
@@ -58,9 +71,24 @@ model VideoTemplate {
   creatomateTemplateId  String
   aspectRatio           String      @default("9:16")
   defaultModifications  Json
+  renderscriptSource    Json?
   active                Boolean     @default(true)
   createdAt             DateTime    @default(now())
   renderJobs            RenderJob[]
+}
+
+model BrowserTask {
+  id        String            @id @default(cuid())
+  type      BrowserTaskType
+  status    BrowserTaskStatus @default(queued)
+  input     Json
+  output    Json?
+  error     String?           @db.Text
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@index([status])
+  @@index([type])
 }
 
 model RenderJob {

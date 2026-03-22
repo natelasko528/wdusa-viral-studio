@@ -60,6 +60,96 @@ const curatedNateLanding = [
   },
 ] as const;
 
+/**
+ * Public image URLs referenced on Nate landing + Window Depot Milwaukee (wp uploads).
+ * Keys match PRD for RenderScript / search_kb category:image.
+ */
+const curatedImages = [
+  {
+    category: "image",
+    key: "logo",
+    content:
+      "https://windowdepotmilwaukee.com/wp-content/uploads/2021/03/WDUSA_MilwaukeeLogo.png",
+    sourceSite: "corporate" as const,
+    sourceUrl: CORPORATE,
+    campaignProfiles: ["nate_landing", "corporate"],
+    metadata: { curated: true },
+  },
+  {
+    category: "image",
+    key: "hero_windows",
+    content:
+      "https://windowdepotmilwaukee.com/wp-content/uploads/2019/06/picture-window3.jpg",
+    sourceSite: "corporate" as const,
+    sourceUrl: CORPORATE,
+    campaignProfiles: ["nate_landing", "corporate"],
+    metadata: { curated: true },
+  },
+  {
+    category: "image",
+    key: "windows_install",
+    content:
+      "https://windowdepotmilwaukee.com/wp-content/uploads/2019/06/picture-window4.jpg",
+    sourceSite: "corporate" as const,
+    sourceUrl: CORPORATE,
+    campaignProfiles: ["nate_landing", "corporate"],
+    metadata: { curated: true },
+  },
+  {
+    category: "image",
+    key: "door_install",
+    content:
+      "https://windowdepotmilwaukee.com/wp-content/uploads/2019/06/Provia-entry-hero7.jpg",
+    sourceSite: "corporate" as const,
+    sourceUrl: CORPORATE,
+    campaignProfiles: ["nate_landing", "corporate"],
+    metadata: { curated: true },
+  },
+  {
+    category: "image",
+    key: "siding_project",
+    content:
+      "https://windowdepotmilwaukee.com/wp-content/uploads/2022/04/Craneboard-siding-img1.jpg",
+    sourceSite: "corporate" as const,
+    sourceUrl: CORPORATE,
+    campaignProfiles: ["nate_landing", "corporate"],
+    metadata: { curated: true },
+  },
+  {
+    category: "image",
+    key: "roof_project",
+    content:
+      "https://windowdepotmilwaukee.com/wp-content/uploads/2021/12/Provia_slate-House-2.jpg",
+    sourceSite: "corporate" as const,
+    sourceUrl: CORPORATE,
+    campaignProfiles: ["nate_landing", "corporate"],
+    metadata: { curated: true },
+  },
+  {
+    category: "image",
+    key: "bathroom_remodel",
+    content:
+      "https://windowdepotmilwaukee.com/wp-content/uploads/2020/04/Gray_Classic_Bath_Roman_Stone_Windmill_Walls_with_Window_Kit_Polished_Chrome_IMG_0626_LR_bci.jpg",
+    sourceSite: "corporate" as const,
+    sourceUrl: CORPORATE,
+    campaignProfiles: ["nate_landing", "corporate"],
+    metadata: { curated: true },
+  },
+  {
+    category: "image",
+    key: "headshot_nate",
+    content:
+      "https://windowdepotmilwaukee.com/wp-content/uploads/2019/06/photo_01.jpg",
+    sourceSite: "nate_landing" as const,
+    sourceUrl: NATE_LANDING,
+    campaignProfiles: ["nate_landing"],
+    metadata: {
+      curated: true,
+      note: "Asset linked from Nate landing; replace with dedicated headshot if needed.",
+    },
+  },
+] as const;
+
 const curatedCorporate = [
   {
     category: "contact",
@@ -148,6 +238,19 @@ async function seedCurated() {
       },
     });
   }
+  for (const row of curatedImages) {
+    await prisma.kbFact.create({
+      data: {
+        sourceSite: row.sourceSite,
+        sourceUrl: row.sourceUrl,
+        category: row.category,
+        key: row.key,
+        content: row.content,
+        campaignProfiles: [...row.campaignProfiles],
+        metadata: { ...(row.metadata as object) },
+      },
+    });
+  }
 }
 
 async function seedTemplate() {
@@ -170,6 +273,7 @@ async function seedTemplate() {
 }
 
 async function main() {
+  await prisma.browserTask.deleteMany();
   await prisma.scheduledPost.deleteMany();
   await prisma.renderJob.deleteMany();
   await prisma.kbFact.deleteMany();
