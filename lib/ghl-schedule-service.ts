@@ -30,7 +30,7 @@ export async function scheduleRenderToGhl(params: {
     );
   }
 
-  const locationId = requireLocationId();
+  const locationId = await requireLocationId();
   const postType = params.type ?? "reel";
   const scheduleDate = new Date(params.scheduleDate);
   const isFuture = scheduleDate.getTime() > Date.now();

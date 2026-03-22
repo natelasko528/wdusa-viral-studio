@@ -3,7 +3,7 @@ import { listSocialAccounts, requireLocationId } from "@/lib/ghl";
 
 export async function GET() {
   try {
-    const locationId = requireLocationId();
+    const locationId = await requireLocationId();
     const data = await listSocialAccounts(locationId);
     return NextResponse.json(data);
   } catch (e) {

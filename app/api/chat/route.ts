@@ -4,19 +4,21 @@ import {
   stepCountIs,
   type UIMessage,
 } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { NextResponse } from "next/server";
 import {
   wdusaChatTools,
   WDUSA_SYSTEM_PROMPT,
 } from "@/lib/chat-tools";
+import { getEffectiveCredential } from "@/lib/stored-credentials";
 
 export const maxDuration = 120;
 
 export async function POST(req: Request) {
-  if (!process.env.OPENAI_API_KEY?.trim()) {
+  const openaiKey = (await getEffectiveCredential("OPENAI_API_KEY"))?.trim();
+  if (!openaiKey) {
     return NextResponse.json(
-      { error: "Missing OPENAI_API_KEY" },
+      { error: "Missing OPENAI_API_KEY (env or Settings)" },
       { status: 503 },
     );
   }
@@ -24,6 +26,7 @@ export async function POST(req: Request) {
   try {
     const body = (await req.json()) as { messages?: UIMessage[] };
     const messages = body.messages ?? [];
+    const openai = createOpenAI({ apiKey: openaiKey });
     const result = streamText({
       model: openai("gpt-4o"),
       system: WDUSA_SYSTEM_PROMPT,

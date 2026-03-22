@@ -1,5 +1,6 @@
 import { PrismaClient, SourceSite } from "@prisma/client";
 import { ingestUrl } from "../lib/ingest";
+import { getEffectiveCredential } from "../lib/stored-credentials";
 
 const prisma = new PrismaClient();
 
@@ -255,7 +256,8 @@ async function seedCurated() {
 
 async function seedTemplate() {
   const templateId =
-    process.env.CREATOMATE_TEMPLATE_ID ?? "REPLACE_WITH_YOUR_CREATOMATE_TEMPLATE_ID";
+    (await getEffectiveCredential("CREATOMATE_TEMPLATE_ID"))?.trim() ||
+    "REPLACE_WITH_YOUR_CREATOMATE_TEMPLATE_ID";
   await prisma.videoTemplate.create({
     data: {
       id: "wdusa-default-template",

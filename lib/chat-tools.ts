@@ -173,7 +173,7 @@ export const wdusaChatTools = {
     inputSchema: z.object({}),
     execute: async () => {
       try {
-        const locationId = requireLocationId();
+        const locationId = await requireLocationId();
         const data = await listSocialAccounts(locationId);
         return { ok: true as const, data };
       } catch (e) {
@@ -190,7 +190,7 @@ export const wdusaChatTools = {
     inputSchema: z.object({}),
     execute: async () => {
       try {
-        const locationId = requireLocationId();
+        const locationId = await requireLocationId();
         const data = await listUsersForLocation(locationId);
         return { ok: true as const, data };
       } catch (e) {

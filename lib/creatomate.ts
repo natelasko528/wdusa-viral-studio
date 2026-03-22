@@ -1,17 +1,19 @@
+import { getEffectiveCredential } from "@/lib/stored-credentials";
+
 const CREATOMATE_API = "https://api.creatomate.com/v2";
 
-function authHeadersJson(): HeadersInit {
-  const key = process.env.CREATOMATE_API_KEY;
-  if (!key) throw new Error("Missing CREATOMATE_API_KEY");
+async function authHeadersJson(): Promise<HeadersInit> {
+  const key = await getEffectiveCredential("CREATOMATE_API_KEY");
+  if (!key) throw new Error("Missing CREATOMATE_API_KEY (env or Settings)");
   return {
     Authorization: `Bearer ${key}`,
     "Content-Type": "application/json",
   };
 }
 
-function authHeadersRead(): HeadersInit {
-  const key = process.env.CREATOMATE_API_KEY;
-  if (!key) throw new Error("Missing CREATOMATE_API_KEY");
+async function authHeadersRead(): Promise<HeadersInit> {
+  const key = await getEffectiveCredential("CREATOMATE_API_KEY");
+  if (!key) throw new Error("Missing CREATOMATE_API_KEY (env or Settings)");
   return { Authorization: `Bearer ${key}` };
 }
 
@@ -31,7 +33,7 @@ export async function createRenderRequest(
 ): Promise<{ id: string }> {
   const res = await fetch(`${CREATOMATE_API}/renders`, {
     method: "POST",
-    headers: authHeadersJson(),
+    headers: await authHeadersJson(),
     body: JSON.stringify(body),
   });
   const text = await res.text();
@@ -60,7 +62,7 @@ export async function getRender(
   renderId: string,
 ): Promise<CreatomateRenderStatus> {
   const res = await fetch(`${CREATOMATE_API}/renders/${renderId}`, {
-    headers: authHeadersRead(),
+    headers: await authHeadersRead(),
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`Creatomate get render failed: ${text}`);

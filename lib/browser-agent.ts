@@ -1,13 +1,14 @@
 import { chromium, type Browser, type Page } from "playwright";
 import { prisma } from "@/lib/prisma";
 import { asPrismaInputJson } from "@/lib/prisma-json";
+import { getEffectiveCredential } from "@/lib/stored-credentials";
 import type { BrowserTaskType } from "@prisma/client";
 
 const CREATOMATE_APP = "https://app.creatomate.com";
 
 async function loginIfNeeded(page: Page): Promise<void> {
-  const email = process.env.CREATOMATE_EMAIL;
-  const password = process.env.CREATOMATE_PASSWORD;
+  const email = await getEffectiveCredential("CREATOMATE_EMAIL");
+  const password = await getEffectiveCredential("CREATOMATE_PASSWORD");
   if (!email?.trim() || !password?.trim()) {
     throw new Error(
       "CREATOMATE_EMAIL and CREATOMATE_PASSWORD must be set for browser automation",
@@ -134,8 +135,8 @@ export async function loginToCreatomate(): Promise<{
   browser: Browser;
   page: Page;
 }> {
-  const email = process.env.CREATOMATE_EMAIL;
-  const password = process.env.CREATOMATE_PASSWORD;
+  const email = await getEffectiveCredential("CREATOMATE_EMAIL");
+  const password = await getEffectiveCredential("CREATOMATE_PASSWORD");
   if (!email?.trim() || !password?.trim()) {
     throw new Error(
       "CREATOMATE_EMAIL and CREATOMATE_PASSWORD must be set for browser automation",

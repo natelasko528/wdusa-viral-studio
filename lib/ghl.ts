@@ -1,8 +1,10 @@
+import { getEffectiveCredential } from "@/lib/stored-credentials";
+
 const GHL_BASE = "https://services.leadconnectorhq.com";
 
-function headers(): HeadersInit {
-  const token = process.env.GHL_API_TOKEN;
-  if (!token) throw new Error("Missing GHL_API_TOKEN");
+async function headers(): Promise<HeadersInit> {
+  const token = await getEffectiveCredential("GHL_API_TOKEN");
+  if (!token) throw new Error("Missing GHL_API_TOKEN (env or Settings)");
   return {
     Authorization: `Bearer ${token}`,
     Version: "2021-07-28",
@@ -11,16 +13,16 @@ function headers(): HeadersInit {
   };
 }
 
-export function requireLocationId(): string {
-  const id = process.env.GHL_LOCATION_ID;
-  if (!id) throw new Error("Missing GHL_LOCATION_ID");
+export async function requireLocationId(): Promise<string> {
+  const id = await getEffectiveCredential("GHL_LOCATION_ID");
+  if (!id) throw new Error("Missing GHL_LOCATION_ID (env or Settings)");
   return id;
 }
 
 export async function listSocialAccounts(locationId: string): Promise<unknown> {
   const res = await fetch(
     `${GHL_BASE}/social-media-posting/${locationId}/accounts`,
-    { headers: headers() },
+    { headers: await headers() },
   );
   const text = await res.text();
   if (!res.ok) throw new Error(`GHL list accounts failed: ${text}`);
@@ -30,7 +32,7 @@ export async function listSocialAccounts(locationId: string): Promise<unknown> {
 export async function listUsersForLocation(locationId: string): Promise<unknown> {
   const url = new URL(`${GHL_BASE}/users/`);
   url.searchParams.set("locationId", locationId);
-  const res = await fetch(url.toString(), { headers: headers() });
+  const res = await fetch(url.toString(), { headers: await headers() });
   const text = await res.text();
   if (!res.ok) throw new Error(`GHL list users failed: ${text}`);
   return JSON.parse(text) as unknown;
@@ -54,7 +56,7 @@ export async function createSocialPost(
     `${GHL_BASE}/social-media-posting/${locationId}/posts`,
     {
       method: "POST",
-      headers: headers(),
+      headers: await headers(),
       body: JSON.stringify(body),
     },
   );
