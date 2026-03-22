@@ -26,9 +26,22 @@ npx prisma db seed
 
 ## Vercel
 
-1. Connect the GitHub repo and set the same environment variables as `.env.example`.
-2. Recommended **Build Command**: `npm run vercel-build` (runs `prisma generate`, `prisma migrate deploy`, `next build`)
-3. After first deploy, run `npx prisma db seed` once (locally against production `DATABASE_URL`, or via a one-off job) to load KB + default template.
+### Before the first deploy (required)
+
+`npm run vercel-build` runs **`prisma migrate deploy`**, which loads `prisma/schema.prisma` and **must** see `DATABASE_URL`. If it is missing, the build fails with **P1012** / `Environment variable not found: DATABASE_URL`.
+
+1. In Vercel: **Project → Settings → Environment Variables**.
+2. Add **`DATABASE_URL`** with your Postgres **direct** connection string (same value you use locally—e.g. Prisma Postgres direct URL from [console.prisma.io](https://console.prisma.io), Neon, or Vercel Postgres).
+3. Apply it to **Production** and **Preview** (and **Development** if you use it).
+4. **Redeploy** (Deployments → … → Redeploy), or push a new commit.
+
+Without `DATABASE_URL`, `postinstall` can still run `prisma generate`, but **`prisma migrate deploy` will always fail** until the variable exists on Vercel.
+
+### After env is set
+
+1. Connect the GitHub repo and add the rest of the variables from `.env.example` as needed (`CREATOMATE_*`, `GHL_*`).
+2. **Build Command** (from `vercel.json`): `npm run vercel-build` — `prisma generate`, `prisma migrate deploy`, `next build`.
+3. After a successful deploy, run **`npx prisma db seed` once** against production (set `DATABASE_URL` in your shell to the same value as Vercel) so KB rows and the default `VideoTemplate` exist.
 
 ## API
 
