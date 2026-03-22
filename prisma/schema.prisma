@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SourceSite {
+  nate_landing
+  corporate
+}
+
+enum RenderJobStatus {
+  queued
+  rendering
+  succeeded
+  failed
+}
+
+enum ScheduledPostStatus {
+  pending
+  scheduled
+  failed
+}
+
+model SourcePage {
+  id         String     @id @default(cuid())
+  url        String
+  sourceSite SourceSite
+  title      String?
+  rawText    String     @db.Text
+  fetchedAt  DateTime   @default(now())
+  facts      KbFact[]
+}
+
+model KbFact {
+  id                 String      @id @default(cuid())
+  sourcePageId       String?
+  sourcePage         SourcePage? @relation(fields: [sourcePageId], references: [id], onDelete: SetNull)
+  sourceSite         SourceSite
+  sourceUrl          String
+  category           String
+  key                String?
+  content            String      @db.Text
+  metadata           Json?
+  campaignProfiles   String[]
+  createdAt          DateTime    @default(now())
+
+  @@index([sourceSite])
+  @@index([category])
+}
+
+model VideoTemplate {
+  id                    String      @id @default(cuid())
+  name                  String
+  creatomateTemplateId  String
+  aspectRatio           String      @default("9:16")
+  defaultModifications  Json
+  active                Boolean     @default(true)
+  createdAt             DateTime    @default(now())
+  renderJobs            RenderJob[]
+}
+
+model RenderJob {
+  id                 String           @id @default(cuid())
+  status             RenderJobStatus  @default(queued)
+  creatomateRenderId String?
+  outputUrl          String?
+  error              String?          @db.Text
+  inputSnapshot      Json
+  campaignProfile    String
+  videoTemplateId    String?
+  videoTemplate      VideoTemplate?   @relation(fields: [videoTemplateId], references: [id], onDelete: SetNull)
+  scheduledPosts     ScheduledPost[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+model ScheduledPost {
+  id           String               @id @default(cuid())
+  renderJobId  String
+  renderJob    RenderJob            @relation(fields: [renderJobId], references: [id], onDelete: Cascade)
+  ghlPostId    String?
+  accountIds   Json
+  scheduleDate DateTime
+  caption      String               @db.Text
+  mediaUrl     String
+  postType     String
+  status       ScheduledPostStatus  @default(pending)
+  rawResponse  Json?
+  createdAt    DateTime             @default(now())
+}
