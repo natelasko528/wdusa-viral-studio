@@ -1,0 +1,477 @@
+{
+  "project": "WDUSA Viral Studio Enhancement",
+  "branchName": "cursor/application-enhancement-plan-639f",
+  "description": "Comprehensive enhancement plan covering security, UI/UX, features, performance, and testing",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Create shared UI component library (Button, Input, Select, Card, Badge, Textarea, Dialog, Skeleton)",
+      "description": "Build reusable UI primitives under components/ui/ using CSS variables from globals.css. Each component accepts standard HTML props. This is the foundation for all subsequent UI work.",
+      "acceptanceCriteria": [
+        "components/ui/ directory with: button.tsx, input.tsx, select.tsx, card.tsx, badge.tsx, textarea.tsx, dialog.tsx, skeleton.tsx",
+        "Each component uses CSS variables (--accent, --border, --surface-raised, etc.) for theming",
+        "Components accept standard HTML props via React.ComponentProps",
+        "Exported from a barrel index file",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "notes": "Do not refactor existing pages yet — just create the primitives. Subsequent tasks will adopt them."
+    },
+    {
+      "id": "TASK-002",
+      "title": "Implement toast notification system",
+      "description": "Create a ToastProvider and useToast hook. Toasts appear top-right, auto-dismiss after 5s, support success/error/info variants, and animate in/out.",
+      "acceptanceCriteria": [
+        "ToastProvider wraps children in app layout.tsx (or dashboard layout)",
+        "useToast() returns { toast } with success/error/info methods",
+        "Toasts appear in top-right, stack vertically, auto-dismiss after 5 seconds",
+        "Smooth slide-in and fade-out animations",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Consider using the Sonner library for simplicity, or build a minimal custom implementation."
+    },
+    {
+      "id": "TASK-003",
+      "title": "Add React error boundaries",
+      "description": "Create an ErrorBoundary component and wrap the dashboard layout and individual complex pages (Studio, Chat) with it.",
+      "acceptanceCriteria": [
+        "components/error-boundary.tsx with 'Something went wrong' UI and 'Try Again' button",
+        "Root error boundary wraps dashboard layout children",
+        "Error logged to console",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Next.js App Router has error.tsx convention — use that for page-level boundaries."
+    },
+    {
+      "id": "TASK-004",
+      "title": "Add Zod validation to all API routes",
+      "description": "Add Zod schemas for request body validation on every POST/PATCH/DELETE API route. Return 400 with structured error on invalid input.",
+      "acceptanceCriteria": [
+        "Every POST/PATCH/DELETE API route validates request body with Zod",
+        "Invalid requests return 400 with { error: string, issues?: ZodIssue[] }",
+        "Shared apiError helper in lib/api-helpers.ts",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "status": "pending",
+      "notes": "Zod is already a dependency. Pattern exists in chat-tools.ts."
+    },
+    {
+      "id": "TASK-005",
+      "title": "Add database indexes (GIN on campaignProfiles, status, dates)",
+      "description": "Create a new Prisma migration adding GIN index on KbFact.campaignProfiles and standard indexes on RenderJob.status, RenderJob.campaignProfile, ScheduledPost.scheduleDate.",
+      "acceptanceCriteria": [
+        "New migration file created",
+        "GIN index on KbFact.campaignProfiles for array containment queries",
+        "Index on RenderJob.campaignProfile",
+        "Index on RenderJob.status",
+        "Index on ScheduledPost.scheduleDate",
+        "prisma generate succeeds",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "status": "pending",
+      "notes": "Use @@index with raw SQL for GIN index: CREATE INDEX ... USING GIN (\"campaignProfiles\")"
+    },
+    {
+      "id": "TASK-006",
+      "title": "Make seed script idempotent (upsert instead of deleteMany)",
+      "description": "Refactor prisma/seed.ts to use upsert for curated facts and template, and skip ingestion if source pages already exist.",
+      "acceptanceCriteria": [
+        "Curated facts use upsert matched by sourceSite + key (or a stable ID)",
+        "Default video template uses upsert matched by id",
+        "Ingest skips source pages that already exist",
+        "Running seed twice produces the same result",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "TASK-007",
+      "title": "Standardize API response shapes",
+      "description": "Create lib/api-helpers.ts with apiSuccess and apiError helpers. Update all API routes to use consistent response shapes.",
+      "acceptanceCriteria": [
+        "lib/api-helpers.ts exports apiSuccess(data, status) and apiError(message, status, issues?) helpers",
+        "All API routes use these helpers for responses",
+        "Error responses always have { error: string }",
+        "Appropriate HTTP status codes (200, 201, 400, 401, 404, 500)",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "TASK-008",
+      "title": "Implement authentication gate (login page + middleware)",
+      "description": "Add a /login page with PIN/password input, cookie-based session, Next.js middleware to redirect unauthenticated users, and 401 on API routes.",
+      "acceptanceCriteria": [
+        "/login page with password input and submit button",
+        "Unauthenticated users redirected to /login from any dashboard route",
+        "API routes return 401 for unauthenticated requests (except /api/webhooks/*)",
+        "Session persists across page refreshes via secure httpOnly cookie",
+        "Logout button in header clears session",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 8,
+      "status": "pending",
+      "notes": "Use a simple cookie-based approach with SETTINGS_ADMIN_PIN or a new AUTH_PASSWORD env var."
+    },
+    {
+      "id": "TASK-009",
+      "title": "Add loading skeletons and rich empty states",
+      "description": "Add skeleton.tsx component and implement skeleton loading + designed empty states on Templates, KB, and Studio pages.",
+      "acceptanceCriteria": [
+        "components/ui/skeleton.tsx with pulse animation",
+        "Templates page: skeleton cards while loading, empty state with icon",
+        "KB page: skeleton rows while loading, empty state with suggestion",
+        "Studio page: skeleton for template dropdown while loading",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 9,
+      "status": "pending",
+      "notes": "Skeleton already listed in TASK-001 primitives; this task implements usage on pages."
+    },
+    {
+      "id": "TASK-010",
+      "title": "Custom branding: favicon, display font, metadata, clean public/",
+      "description": "Replace default Next.js assets with WDUSA branding. Add a distinctive heading font. Update metadata.",
+      "acceptanceCriteria": [
+        "Custom favicon in public/ (WDUSA-themed)",
+        "Distinctive display font loaded via next/font/google for headings",
+        "Updated metadata in layout.tsx (title, description, OG tags)",
+        "Removed default Next.js SVGs (file.svg, globe.svg, vercel.svg, next.svg)",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 10,
+      "status": "pending",
+      "notes": "Keep window.svg if it's used. Pick a bold geometric font like Space Grotesk, DM Serif Display, or similar."
+    },
+    {
+      "id": "TASK-011",
+      "title": "Build dashboard home page with stats and recent activity",
+      "description": "Replace the redirect to /studio with a real dashboard showing render stats, recent renders table, and upcoming scheduled posts.",
+      "acceptanceCriteria": [
+        "/ route renders a dashboard page (not a redirect)",
+        "3 stat cards: total renders, renders this week, scheduled posts count",
+        "Recent Renders table (last 10) with status badge, date, output link",
+        "Upcoming Scheduled Posts list (next 5)",
+        "Quick-action buttons linking to Studio, KB, Chat",
+        "New API route /api/dashboard/stats for aggregated data",
+        "Uses UI component library from TASK-001",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 11,
+      "status": "pending",
+      "notes": "Depends on TASK-001 (UI components) and TASK-005 (indexes for efficient queries)."
+    },
+    {
+      "id": "TASK-012",
+      "title": "Build render history page with filtering",
+      "description": "New page at /renders showing all render jobs with status filtering, expandable details, and pagination.",
+      "acceptanceCriteria": [
+        "New page at /renders added to navigation",
+        "Table/list of all render jobs: date, campaign, mode, status badge, output link",
+        "Click row to expand: input snapshot, Creatomate ID, error",
+        "Filter by status dropdown (all / rendering / succeeded / failed)",
+        "Pagination (page size 20)",
+        "Uses UI component library",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 12,
+      "status": "pending",
+      "notes": "New API route /api/renders with query params: status, page, limit."
+    },
+    {
+      "id": "TASK-013",
+      "title": "Decompose Studio page into sub-components",
+      "description": "Extract Studio page into focused sub-components under components/studio/. No file should exceed 150 lines.",
+      "acceptanceCriteria": [
+        "Studio page imports: CampaignSelect, RenderModeToggle, TemplateForm, RenderScriptForm, RenderStatus, ScheduleForm",
+        "Each sub-component in components/studio/",
+        "No single file exceeds 150 lines",
+        "Behavior identical to current Studio",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 13,
+      "status": "pending",
+      "notes": "Extract state management into a custom hook or keep in page with prop drilling."
+    },
+    {
+      "id": "TASK-014",
+      "title": "Add inline video preview player in Studio",
+      "description": "When a render succeeds with an outputUrl, show an HTML5 video player inline with controls and download button.",
+      "acceptanceCriteria": [
+        "HTML5 <video> player shown when job.outputUrl is available and status is succeeded",
+        "Player has controls: play, pause, scrub, mute, fullscreen",
+        "Video in 9:16 container fitting card width",
+        "Download button below player",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 14,
+      "status": "pending",
+      "notes": "Part of the RenderStatus sub-component from TASK-013."
+    },
+    {
+      "id": "TASK-015",
+      "title": "Add KB fact CRUD (create, edit, delete)",
+      "description": "Add create/edit/delete capabilities for individual KB facts. New API routes and UI controls on the KB page.",
+      "acceptanceCriteria": [
+        "Add Fact button opens form: category, key, content, campaign profiles, source URL",
+        "Each fact card has Edit and Delete buttons",
+        "Edit opens pre-filled form; save calls PATCH /api/kb/[id]",
+        "Delete shows confirmation; calls DELETE /api/kb/[id]",
+        "New API routes: POST /api/kb, PATCH /api/kb/[id], DELETE /api/kb/[id]",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 15,
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "TASK-016",
+      "title": "Shared chat state between panel and page",
+      "description": "Create a ChatProvider context so ChatPanel and ChatPage share the same useChat instance and conversation.",
+      "acceptanceCriteria": [
+        "ChatProvider context wraps dashboard layout",
+        "Both ChatPanel and ChatPage consume same useChat instance",
+        "Messages from panel appear on page and vice versa",
+        "Opening panel on /chat page navigates to page (no duplicate UI)",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 16,
+      "status": "pending",
+      "notes": "DefaultChatTransport should be memoized/module-scoped to avoid re-instantiation."
+    },
+    {
+      "id": "TASK-017",
+      "title": "Add AI-assisted script generation in Studio",
+      "description": "Add a 'Generate with AI' button that fills hook/subhead/CTA based on campaign profile and an optional topic, using OpenAI.",
+      "acceptanceCriteria": [
+        "Generate with AI button above hook/subhead/CTA fields",
+        "Click opens popover with Topic input and Generate button",
+        "Backend calls OpenAI with KB context for selected campaign profile",
+        "Generated values fill into form fields",
+        "User can regenerate or manually edit",
+        "New API route: POST /api/studio/generate-script",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 17,
+      "status": "pending",
+      "notes": "Use streaming for responsiveness. The system prompt should include relevant KB facts."
+    },
+    {
+      "id": "TASK-018",
+      "title": "Build scheduling calendar view",
+      "description": "New page at /calendar with monthly grid showing scheduled posts, previous/next navigation, and detail popover on click.",
+      "acceptanceCriteria": [
+        "New page at /calendar added to navigation",
+        "Monthly calendar grid with posts on their dates",
+        "Post cards show caption preview and status badge",
+        "Click post to see details (media URL, GHL ID, accounts)",
+        "Previous/next month navigation",
+        "New API route: GET /api/scheduled-posts with date range params",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 18,
+      "status": "pending",
+      "notes": "Use date-fns for date math. Degrade to list view on mobile."
+    },
+    {
+      "id": "TASK-019",
+      "title": "Add chat prompt templates dropdown",
+      "description": "Add a Templates button in chat input that shows a dropdown of 5+ built-in prompt templates for common workflows.",
+      "acceptanceCriteria": [
+        "Templates button in chat input area opens dropdown",
+        "At least 5 templates: reel script, batch hooks, KB search, schedule post, render status",
+        "Selecting template fills input (user can edit before sending)",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 19,
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "TASK-020",
+      "title": "Add page transition animations",
+      "description": "Add subtle fade-up entry animation on route changes for the main content area.",
+      "acceptanceCriteria": [
+        "Main content area has fade-up entry animation on route change",
+        "Duration 200-300ms with ease-out easing",
+        "No layout shift or flicker",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 20,
+      "status": "pending",
+      "notes": "Can be done with CSS @keyframes and a wrapper component."
+    },
+    {
+      "id": "TASK-021",
+      "title": "KB re-ingest with progress indication",
+      "description": "Add a Re-Ingest Sources button on the KB page with loading spinner and result count toast.",
+      "acceptanceCriteria": [
+        "Re-Ingest Sources button on KB page",
+        "Button shows spinner and disables while ingesting",
+        "After completion, displays count of facts added via toast",
+        "Toast on failure",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 21,
+      "status": "pending",
+      "notes": "Calls existing POST /api/kb/ingest."
+    },
+    {
+      "id": "TASK-022",
+      "title": "Dynamic campaign profiles (DB-driven)",
+      "description": "New CampaignProfile model in Prisma. CRUD page/section. All dropdowns populated from DB instead of hardcoded.",
+      "acceptanceCriteria": [
+        "New Prisma model: CampaignProfile (id, slug, displayName, description, contactPhone, contactEmail, bookingUrl, active)",
+        "Migration seeds nate_landing and corporate as initial profiles",
+        "Settings or dedicated page for CRUD",
+        "All profile dropdowns dynamically populated",
+        "API route: GET /api/campaigns, POST /api/campaigns, PATCH /api/campaigns/[id]",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 22,
+      "status": "pending",
+      "notes": "KbFact.campaignProfiles stays as String[] but references CampaignProfile.slug."
+    },
+    {
+      "id": "TASK-023",
+      "title": "Template preview thumbnails",
+      "description": "Fetch template preview thumbnails from Creatomate API and display on the Templates page.",
+      "acceptanceCriteria": [
+        "Templates page shows thumbnail for each template",
+        "Thumbnail fetched from Creatomate API or stored in VideoTemplate.thumbnailUrl",
+        "Fallback placeholder if unavailable",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 23,
+      "status": "pending",
+      "notes": "Add thumbnailUrl field to VideoTemplate schema."
+    },
+    {
+      "id": "TASK-024",
+      "title": "Chat history persistence in database",
+      "description": "New ChatSession and ChatMessage Prisma models. Save messages as they stream. History sidebar to load past sessions.",
+      "acceptanceCriteria": [
+        "New models: ChatSession (id, title, createdAt, updatedAt), ChatMessage (id, sessionId, role, content, toolCalls, createdAt)",
+        "Sessions created on first message",
+        "Messages saved as sent/streamed",
+        "History list in chat UI with session timestamps",
+        "Click session to load messages",
+        "New Chat button starts fresh session",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 24,
+      "status": "pending",
+      "notes": "Complex feature — consider doing a simpler version first (just persist, no UI for browsing)."
+    },
+    {
+      "id": "TASK-025",
+      "title": "Creatomate webhook integration",
+      "description": "New webhook endpoint for Creatomate to push render status. Update RenderJob on receipt. Frontend uses refetch instead of polling.",
+      "acceptanceCriteria": [
+        "POST /api/webhooks/creatomate route",
+        "Updates RenderJob status on succeeded/failed",
+        "CREATOMATE_WEBHOOK_URL in .env.example",
+        "Frontend refetches instead of setInterval polling",
+        "Typecheck passes"
+      ],
+      "priority": 25,
+      "status": "pending",
+      "notes": "Check if Creatomate plan supports webhooks. If not, implement SSE-based server-side polling."
+    },
+    {
+      "id": "TASK-026",
+      "title": "Configure Vitest and write unit tests for core lib modules",
+      "description": "Set up Vitest. Write tests for renderscript.ts, modifications.ts, secret-crypto.ts, creatomate.ts.",
+      "acceptanceCriteria": [
+        "Vitest configured with TypeScript support",
+        "Tests for buildWdusaReel output structure",
+        "Tests for mergeModifications merge behavior",
+        "Tests for encrypt/decrypt roundtrip",
+        "Tests for mapCreatomateStatus and extractOutputUrl",
+        ">=80% coverage on tested modules",
+        "npm test runs all tests",
+        "Typecheck passes"
+      ],
+      "priority": 26,
+      "status": "pending",
+      "notes": "Replace existing scripts/assert-modifications.ts with proper Vitest tests."
+    },
+    {
+      "id": "TASK-027",
+      "title": "Add GitHub Actions CI pipeline",
+      "description": "Create .github/workflows/ci.yml with lint, typecheck, test, and build jobs.",
+      "acceptanceCriteria": [
+        ".github/workflows/ci.yml exists",
+        "Jobs: lint, typecheck (tsc --noEmit), test (vitest), build",
+        "Runs on push to main and on PRs",
+        "Caches node_modules and .next",
+        "Build runs prisma generate before next build",
+        "All jobs pass on current codebase",
+        "Typecheck passes"
+      ],
+      "priority": 27,
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "TASK-028",
+      "title": "Fix quick-win bugs (nav labels, chat FAB overlap, swallowed errors)",
+      "description": "Fix the bugs identified in the audit: nav label mismatch, chat FAB z-index, swallowed template load errors, DefaultChatTransport re-instantiation.",
+      "acceptanceCriteria": [
+        "nav-mobile.tsx and nav-sidebar.tsx use consistent labels",
+        "Chat FAB properly positioned on mobile (no overlap with bottom nav)",
+        "Studio template load error is logged to console",
+        "DefaultChatTransport in chat-panel.tsx and chat/page.tsx is module-scoped or memoized",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 28,
+      "status": "pending",
+      "notes": "Quick wins — can be done in a single focused session."
+    },
+    {
+      "id": "TASK-029",
+      "title": "Rate limiting on sensitive API routes",
+      "description": "Add rate limiting to credential management and auth endpoints using in-memory or header-based approach.",
+      "acceptanceCriteria": [
+        "/api/settings/credentials POST/DELETE: 10 req/min per IP",
+        "Auth endpoint (if exists): 5 attempts/min per IP",
+        "429 response with Retry-After header on limit exceeded",
+        "Typecheck passes"
+      ],
+      "priority": 29,
+      "status": "pending",
+      "notes": "Use a simple in-memory Map-based rate limiter (sufficient for single-instance Vercel deployment)."
+    }
+  ]
+}
