@@ -1,6 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Button, Input } from "@/components/ui";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/select";
+import { SkeletonRow } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type KbFact = {
   id: string;
@@ -16,7 +22,7 @@ export default function KbPage() {
   const [category, setCategory] = useState("");
   const [q, setQ] = useState("");
   const [facts, setFacts] = useState<KbFact[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
   const load = async () => {
@@ -39,8 +45,7 @@ export default function KbPage() {
 
   useEffect(() => {
     void load();
-    // Intentional: refetch when profile changes only; category/q apply on Search.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
 
   const categories = useMemo(() => {
@@ -52,99 +57,95 @@ export default function KbPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold">Knowledge base</h1>
+        <h1 className="text-xl font-semibold">Knowledge Base</h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
-          Facts ingested from Nate landing and Window Depot Milwaukee. Filter by
-          profile and category; search matches content and keys.
+          Facts ingested from Nate landing and Window Depot Milwaukee. Filter by profile and category.
         </p>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-raised)] p-4 sm:flex-row sm:flex-wrap sm:items-end">
-        <label className="text-xs font-medium text-[var(--text-muted)]">
-          Profile
-          <select
-            value={profile}
-            onChange={(e) => setProfile(e.target.value)}
-            className="mt-1 block w-full min-w-[160px] rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm sm:w-auto"
-          >
-            <option value="nate_landing">nate_landing</option>
-            <option value="corporate">corporate</option>
-          </select>
-        </label>
-        <label className="text-xs font-medium text-[var(--text-muted)]">
-          Category (optional)
-          <input
-            list="kb-cats"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            placeholder="e.g. image, hook"
-            className="mt-1 block w-full min-w-[160px] rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm sm:w-auto"
-          />
-          <datalist id="kb-cats">
-            {categories.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
-        </label>
-        <label className="min-w-0 flex-1 text-xs font-medium text-[var(--text-muted)]">
-          Search
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && void load()}
-            placeholder="Keyword…"
-            className="mt-1 block w-full rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm"
-          />
-        </label>
-        <button
-          type="button"
-          onClick={() => void load()}
-          disabled={loading}
-          className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-text)] disabled:opacity-50"
-        >
-          {loading ? "Loading…" : "Search"}
-        </button>
-      </div>
+      <Card>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+          <div className="min-w-[160px]">
+            <Select label="Profile" value={profile} onChange={(e) => setProfile(e.target.value)}>
+              <option value="nate_landing">nate_landing</option>
+              <option value="corporate">corporate</option>
+            </Select>
+          </div>
+          <div className="min-w-[160px]">
+            <label className="block text-xs font-medium text-[var(--text-muted)]">
+              Category
+              <input
+                list="kb-cats"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="e.g. image, hook"
+                className="mt-1 block w-full rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+              />
+              <datalist id="kb-cats">
+                {categories.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
+            </label>
+          </div>
+          <div className="min-w-0 flex-1">
+            <Input
+              label="Search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && void load()}
+              placeholder="Keyword…"
+            />
+          </div>
+          <Button loading={loading} onClick={() => void load()}>
+            Search
+          </Button>
+        </div>
+      </Card>
 
-      {err ? (
-        <p className="text-sm text-[var(--danger-text)]">{err}</p>
-      ) : null}
+      {err ? <p className="text-sm text-[var(--danger-text)]">{err}</p> : null}
 
-      <ul className="space-y-3">
-        {facts.map((f) => (
-          <li
-            key={f.id}
-            className="rounded-xl border border-[var(--border)] bg-[var(--surface-raised)] p-4"
-          >
-            <div className="flex flex-wrap items-baseline gap-2 text-xs text-[var(--text-muted)]">
-              <span className="rounded bg-[var(--code-bg)] px-1.5 py-0.5 font-mono">
-                {f.category}
-              </span>
-              {f.key ? (
-                <span className="font-mono text-[var(--text-secondary)]">
-                  {f.key}
-                </span>
-              ) : null}
-              <span>{f.sourceSite}</span>
-            </div>
-            <p className="mt-2 whitespace-pre-wrap text-sm text-[var(--text-primary)]">
-              {f.content}
-            </p>
-            <a
-              href={f.sourceUrl}
-              className="mt-2 inline-block text-xs text-[var(--accent)] underline"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Source
-            </a>
-          </li>
-        ))}
-      </ul>
-
-      {!loading && facts.length === 0 ? (
-        <p className="text-sm text-[var(--text-muted)]">No facts match.</p>
-      ) : null}
+      {loading ? (
+        <div className="space-y-3">
+          {[1, 2, 3, 4].map((i) => <SkeletonRow key={i} />)}
+        </div>
+      ) : facts.length === 0 ? (
+        <EmptyState
+          title="No facts match"
+          description="Try adjusting your profile, category, or search terms."
+          icon={
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)] opacity-50">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+          }
+        />
+      ) : (
+        <ul className="space-y-3">
+          {facts.map((f) => (
+            <li key={f.id}>
+              <Card padding="md">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge>{f.category}</Badge>
+                  {f.key ? (
+                    <span className="font-mono text-xs text-[var(--text-secondary)]">{f.key}</span>
+                  ) : null}
+                  <span className="text-[11px] text-[var(--text-muted)]">{f.sourceSite}</span>
+                </div>
+                <p className="mt-2 whitespace-pre-wrap text-sm text-[var(--text-primary)]">{f.content}</p>
+                <a
+                  href={f.sourceUrl}
+                  className="mt-2 inline-block text-xs text-[var(--accent)] underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Source
+                </a>
+              </Card>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

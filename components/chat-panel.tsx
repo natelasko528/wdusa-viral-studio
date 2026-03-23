@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChatMessageRow } from "@/components/chat-message";
 
 type Props = {
@@ -13,8 +13,9 @@ type Props = {
 export function ChatPanel({ open, onClose }: Props) {
   const [input, setInput] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
+  const transport = useMemo(() => new DefaultChatTransport({ api: "/api/chat" }), []);
   const { messages, sendMessage, status, stop, error, clearError } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
+    transport,
   });
 
   useEffect(() => {
@@ -34,7 +35,7 @@ export function ChatPanel({ open, onClose }: Props) {
         onClick={onClose}
       />
       <div
-        className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[min(100vw,480px)] flex-col border-l border-[var(--border)] bg-[var(--surface)] shadow-xl"
+        className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[min(100vw,480px)] flex-col border-l border-[var(--border)] bg-[var(--surface)] shadow-xl animate-in slide-in-from-right duration-200"
         role="dialog"
         aria-modal="true"
         aria-labelledby="wdusa-chat-title"

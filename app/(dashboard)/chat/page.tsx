@@ -2,14 +2,15 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChatMessageRow } from "@/components/chat-message";
 
 export default function ChatPage() {
   const [input, setInput] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
+  const transport = useMemo(() => new DefaultChatTransport({ api: "/api/chat" }), []);
   const { messages, sendMessage, status, stop, error, clearError } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
+    transport,
   });
 
   useEffect(() => {

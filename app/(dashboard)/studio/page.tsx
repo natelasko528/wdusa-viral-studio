@@ -1,6 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Button, Input, Textarea } from "@/components/ui";
+import { Card } from "@/components/ui/card";
+import { useToast } from "@/components/ui/toast";
+import { CampaignSelect } from "@/components/studio/campaign-select";
+import { RenderModeToggle } from "@/components/studio/render-mode-toggle";
+import { TemplateForm } from "@/components/studio/template-form";
+import { RenderScriptForm } from "@/components/studio/renderscript-form";
+import { RenderStatus } from "@/components/studio/render-status";
+import { ScheduleForm } from "@/components/studio/schedule-form";
 
 type VideoTemplate = {
   id: string;
@@ -33,10 +42,7 @@ function pickIdNameList(raw: unknown, keys: string[]): { id: string; name: strin
       let name = "";
       for (const k of keys) {
         const v = row[k];
-        if (typeof v === "string" && v) {
-          name = v;
-          break;
-        }
+        if (typeof v === "string" && v) { name = v; break; }
       }
       if (!name) name = id || "—";
       return { id, name };
@@ -45,8 +51,10 @@ function pickIdNameList(raw: unknown, keys: string[]): { id: string; name: strin
 }
 
 export default function StudioPage() {
+  const { toast } = useToast();
   const [mode, setMode] = useState<"template" | "renderscript">("template");
   const [templates, setTemplates] = useState<VideoTemplate[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
   const [templateId, setTemplateId] = useState("");
   const [hook, setHook] = useState("");
   const [subhead, setSubhead] = useState("");
@@ -72,66 +80,46 @@ export default function StudioPage() {
     void (async () => {
       try {
         const res = await fetch("/api/templates");
-        const data = (await res.json()) as {
-          templates?: VideoTemplate[];
-          error?: string;
-        };
+        const data = (await res.json()) as { templates?: VideoTemplate[]; error?: string };
         if (!res.ok) throw new Error(data.error ?? "Failed to load templates");
         const list = data.templates ?? [];
         setTemplates(list);
         setTemplateId((prev) => prev || list[0]?.id || "");
-      } catch {
-        /* ignore */
+      } catch (e) {
+        console.error("Failed to load templates:", e);
+      } finally {
+        setTemplatesLoading(false);
       }
     })();
   }, []);
 
   const loadGhl = useCallback(async () => {
     try {
-      const [aRes, uRes] = await Promise.all([
-        fetch("/api/ghl/accounts"),
-        fetch("/api/ghl/users"),
-      ]);
+      const [aRes, uRes] = await Promise.all([fetch("/api/ghl/accounts"), fetch("/api/ghl/users")]);
       const aJson = (await aRes.json()) as unknown;
       const uJson = (await uRes.json()) as unknown;
-      if (aRes.ok) {
-        setAccounts(
-          pickIdNameList(aJson, ["name", "platform", "accountName", "title"]),
-        );
-      }
-      if (uRes.ok) {
-        setUsers(
-          pickIdNameList(uJson, ["name", "firstName", "email", "lastName"]),
-        );
-      }
-    } catch {
-      /* optional */
-    }
+      if (aRes.ok) setAccounts(pickIdNameList(aJson, ["name", "platform", "accountName", "title"]));
+      if (uRes.ok) setUsers(pickIdNameList(uJson, ["name", "firstName", "email", "lastName"]));
+    } catch { /* GHL is optional */ }
   }, []);
 
-  useEffect(() => {
-    void loadGhl();
-  }, [loadGhl]);
+  useEffect(() => { void loadGhl(); }, [loadGhl]);
 
   const pollJob = useCallback(async (id: string) => {
     setPollMsg("Polling…");
     const res = await fetch(`/api/renders/${id}`);
     const data = (await res.json()) as { job?: RenderJob; error?: string };
-    if (!res.ok) {
-      setPollMsg(data.error ?? "Poll failed");
-      return;
-    }
-    setJob(data.job ?? null);
-    setPollMsg(data.job?.status ?? "");
-  }, []);
+    if (!res.ok) { setPollMsg(data.error ?? "Poll failed"); return; }
+    const updated = data.job ?? null;
+    setJob(updated);
+    setPollMsg(updated?.status ?? "");
+    if (updated?.status === "succeeded") toast.success("Render complete!");
+    if (updated?.status === "failed") toast.error("Render failed");
+  }, [toast]);
 
   useEffect(() => {
-    if (!job?.id || job.status === "succeeded" || job.status === "failed") {
-      return;
-    }
-    const t = setInterval(() => {
-      void pollJob(job.id);
-    }, 2500);
+    if (!job?.id || job.status === "succeeded" || job.status === "failed") return;
+    const t = setInterval(() => { void pollJob(job.id); }, 2500);
     return () => clearInterval(t);
   }, [job?.id, job?.status, pollJob]);
 
@@ -139,335 +127,102 @@ export default function StudioPage() {
     setLoading(true);
     setPollMsg("");
     try {
-      const imageUrls = imageUrlsText
-        .split(/[\n,]/)
-        .map((s) => s.trim())
-        .filter(Boolean);
+      const imageUrls = imageUrlsText.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
       const body =
         mode === "template"
-          ? {
-              mode: "template" as const,
-              campaignProfile,
-              videoTemplateId: templateId,
-              hook: hook || undefined,
-              subhead: subhead || undefined,
-              cta: cta || undefined,
-            }
-          : {
-              mode: "renderscript" as const,
-              campaignProfile,
-              hook: hook || "Upgrade your home",
-              subhead: subhead || "Window Depot USA · Milwaukee",
-              cta: cta || "Book your FREE estimate",
-              phone: phone || undefined,
-              imageUrls: imageUrls.length ? imageUrls : undefined,
-              headshotUrl: headshotUrl.trim() || undefined,
-            };
-      const res = await fetch("/api/renders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+          ? { mode: "template" as const, campaignProfile, videoTemplateId: templateId, hook: hook || undefined, subhead: subhead || undefined, cta: cta || undefined }
+          : { mode: "renderscript" as const, campaignProfile, hook: hook || "Upgrade your home", subhead: subhead || "Window Depot USA · Milwaukee", cta: cta || "Book your FREE estimate", phone: phone || undefined, imageUrls: imageUrls.length ? imageUrls : undefined, headshotUrl: headshotUrl.trim() || undefined };
+      const res = await fetch("/api/renders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = (await res.json()) as { job?: RenderJob; error?: string };
       if (!res.ok) throw new Error(data.error ?? "Render failed");
       setJob(data.job ?? null);
       setPollMsg(data.job?.status ?? "");
+      toast.info("Render started — polling for status…");
     } catch (e) {
-      setPollMsg(e instanceof Error ? e.message : String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      setPollMsg(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
   const schedule = async () => {
-    if (!job?.id) {
-      setScheduleMsg("Start a render first.");
-      return;
-    }
+    if (!job?.id) { toast.error("Start a render first."); return; }
     setScheduleMsg("");
     try {
       const res = await fetch("/api/ghl/schedule", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          renderJobId: job.id,
-          accountIds: selectedAccounts,
-          userId,
-          scheduleDate,
-          summary: summary || hook || "WDUSA Reel",
-          type: "reel",
-        }),
+        body: JSON.stringify({ renderJobId: job.id, accountIds: selectedAccounts, userId, scheduleDate, summary: summary || hook || "WDUSA Reel", type: "reel" }),
       });
       const data = (await res.json()) as { error?: string; scheduledPost?: { id: string } };
       if (!res.ok) throw new Error(data.error ?? "Schedule failed");
-      setScheduleMsg(`Scheduled (${data.scheduledPost?.id ?? "ok"})`);
+      const msg = `Scheduled (${data.scheduledPost?.id ?? "ok"})`;
+      setScheduleMsg(msg);
+      toast.success(msg);
     } catch (e) {
-      setScheduleMsg(e instanceof Error ? e.message : String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      setScheduleMsg(msg);
+      toast.error(msg);
     }
   };
 
   const toggleAccount = (id: string) => {
-    setSelectedAccounts((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+    setSelectedAccounts((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
+    <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <h1 className="text-xl font-semibold">Studio</h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
-          Render with a Creatomate template or template-free RenderScript, then
-          schedule to GoHighLevel.
+          Render with a Creatomate template or template-free RenderScript, then schedule to GoHighLevel.
         </p>
       </div>
 
-      <section className="rounded-xl border border-[var(--border)] bg-[var(--surface-raised)] p-4">
-        <h2 className="text-sm font-medium text-[var(--text-secondary)]">
-          Campaign profile
-        </h2>
-        <select
-          value={campaignProfile}
-          onChange={(e) => setCampaignProfile(e.target.value)}
-          className="mt-2 w-full rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm"
-        >
-          <option value="nate_landing">nate_landing</option>
-          <option value="corporate">corporate</option>
-        </select>
-      </section>
+      <Card>
+        <CampaignSelect value={campaignProfile} onChange={setCampaignProfile} />
+      </Card>
 
-      <section className="rounded-xl border border-[var(--border)] bg-[var(--surface-raised)] p-4">
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setMode("template")}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-              mode === "template"
-                ? "bg-[var(--accent-muted)] text-[var(--accent)]"
-                : "text-[var(--text-muted)]"
-            }`}
-          >
-            Template
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("renderscript")}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-              mode === "renderscript"
-                ? "bg-[var(--accent-muted)] text-[var(--accent)]"
-                : "text-[var(--text-muted)]"
-            }`}
-          >
-            RenderScript
-          </button>
+      <Card>
+        <RenderModeToggle mode={mode} onChange={setMode} />
+
+        <div className="mt-4">
+          {mode === "template" ? (
+            <TemplateForm templates={templates} templateId={templateId} onTemplateChange={setTemplateId} loading={templatesLoading} />
+          ) : (
+            <RenderScriptForm phone={phone} onPhoneChange={setPhone} imageUrlsText={imageUrlsText} onImageUrlsChange={setImageUrlsText} headshotUrl={headshotUrl} onHeadshotChange={setHeadshotUrl} />
+          )}
         </div>
-
-        {mode === "template" ? (
-          <div className="mt-4 space-y-3">
-            <label className="block text-xs font-medium text-[var(--text-muted)]">
-              Video template
-              <select
-                value={templateId}
-                onChange={(e) => setTemplateId(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm"
-              >
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} ({t.aspectRatio})
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        ) : (
-          <div className="mt-4 space-y-3">
-            <label className="block text-xs font-medium text-[var(--text-muted)]">
-              Phone on CTA card
-              <input
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="block text-xs font-medium text-[var(--text-muted)]">
-              Background image URLs (one per line or comma-separated)
-              <textarea
-                value={imageUrlsText}
-                onChange={(e) => setImageUrlsText(e.target.value)}
-                rows={3}
-                placeholder="https://…"
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 font-mono text-xs"
-              />
-            </label>
-            <label className="block text-xs font-medium text-[var(--text-muted)]">
-              Headshot URL (optional)
-              <input
-                value={headshotUrl}
-                onChange={(e) => setHeadshotUrl(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm"
-              />
-            </label>
-          </div>
-        )}
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-1">
-          <label className="block text-xs font-medium text-[var(--text-muted)]">
-            Hook
-            <input
-              value={hook}
-              onChange={(e) => setHook(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="block text-xs font-medium text-[var(--text-muted)]">
-            Subhead
-            <textarea
-              value={subhead}
-              onChange={(e) => setSubhead(e.target.value)}
-              rows={2}
-              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="block text-xs font-medium text-[var(--text-muted)]">
-            CTA
-            <input
-              value={cta}
-              onChange={(e) => setCta(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm"
-            />
-          </label>
-        </div>
-
-        <button
-          type="button"
-          disabled={loading}
-          onClick={() => void startRender()}
-          className="mt-4 w-full rounded-lg bg-[var(--accent)] py-2.5 text-sm font-semibold text-[var(--accent-text)] disabled:opacity-50"
-        >
-          {loading ? "Starting…" : "Start render"}
-        </button>
-
-        {job ? (
-          <div className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--code-bg)] p-3 text-xs">
-            <p>
-              <span className="text-[var(--text-muted)]">Job:</span>{" "}
-              <span className="font-mono">{job.id}</span>
-            </p>
-            <p>
-              <span className="text-[var(--text-muted)]">Status:</span> {job.status}
-            </p>
-            {job.outputUrl ? (
-              <p className="mt-2 break-all">
-                <a
-                  href={job.outputUrl}
-                  className="text-[var(--accent)] underline"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {job.outputUrl}
-                </a>
-              </p>
-            ) : null}
-            {job.error ? (
-              <p className="mt-2 text-[var(--danger-text)]">{job.error}</p>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => void pollJob(job.id)}
-              className="mt-2 rounded border border-[var(--border)] px-2 py-1 text-[11px]"
-            >
-              Refresh status
-            </button>
-            <p className="mt-1 text-[var(--text-muted)]">{pollMsg}</p>
-          </div>
-        ) : null}
-      </section>
-
-      <section className="rounded-xl border border-[var(--border)] bg-[var(--surface-raised)] p-4">
-        <h2 className="text-sm font-medium text-[var(--text-secondary)]">
-          Schedule (GoHighLevel)
-        </h2>
-        <p className="mt-1 text-xs text-[var(--text-muted)]">
-          Render must finish with an output URL. Pick accounts and a future
-          time.
-        </p>
 
         <div className="mt-4 space-y-3">
-          <div>
-            <p className="text-xs font-medium text-[var(--text-muted)]">
-              Accounts
-            </p>
-            <div className="mt-1 max-h-32 space-y-1 overflow-y-auto rounded-lg border border-[var(--border)] p-2">
-              {accounts.length === 0 ? (
-                <span className="text-xs text-[var(--text-muted)]">
-                  None loaded (check GHL env).
-                </span>
-              ) : (
-                accounts.map((a) => (
-                  <label
-                    key={a.id}
-                    className="flex cursor-pointer items-center gap-2 text-sm"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedAccounts.includes(a.id)}
-                      onChange={() => toggleAccount(a.id)}
-                    />
-                    {a.name}
-                  </label>
-                ))
-              )}
-            </div>
-          </div>
-
-          <label className="block text-xs font-medium text-[var(--text-muted)]">
-            User (required by GHL API)
-            <select
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm"
-            >
-              <option value="">Select…</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block text-xs font-medium text-[var(--text-muted)]">
-            Schedule (local datetime)
-            <input
-              type="datetime-local"
-              value={scheduleDate}
-              onChange={(e) => setScheduleDate(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm"
-            />
-          </label>
-
-          <label className="block text-xs font-medium text-[var(--text-muted)]">
-            Caption / summary
-            <textarea
-              value={summary}
-              onChange={(e) => setSummary(e.target.value)}
-              rows={2}
-              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm"
-            />
-          </label>
-
-          <button
-            type="button"
-            onClick={() => void schedule()}
-            className="w-full rounded-lg border border-[var(--border-strong)] py-2 text-sm font-medium"
-          >
-            Schedule post
-          </button>
-          {scheduleMsg ? (
-            <p className="text-xs text-[var(--text-muted)]">{scheduleMsg}</p>
-          ) : null}
+          <Input label="Hook" value={hook} onChange={(e) => setHook(e.target.value)} />
+          <Textarea label="Subhead" value={subhead} onChange={(e) => setSubhead(e.target.value)} rows={2} />
+          <Input label="CTA" value={cta} onChange={(e) => setCta(e.target.value)} />
         </div>
-      </section>
+
+        <Button className="mt-4 w-full" size="lg" loading={loading} onClick={() => void startRender()}>
+          {loading ? "Starting…" : "Start render"}
+        </Button>
+
+        {job ? <RenderStatus job={job} pollMsg={pollMsg} onRefresh={() => void pollJob(job.id)} /> : null}
+      </Card>
+
+      <ScheduleForm
+        accounts={accounts}
+        users={users}
+        selectedAccounts={selectedAccounts}
+        onToggleAccount={toggleAccount}
+        userId={userId}
+        onUserChange={setUserId}
+        scheduleDate={scheduleDate}
+        onDateChange={setScheduleDate}
+        summary={summary}
+        onSummaryChange={setSummary}
+        onSchedule={() => void schedule()}
+        scheduleMsg={scheduleMsg}
+      />
     </div>
   );
 }
