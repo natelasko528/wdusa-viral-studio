@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { streamText } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { getEffectiveCredential } from "@/lib/stored-credentials";
 import {
   buildContentPrompt,
@@ -33,6 +33,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing OPENAI_API_KEY" }, { status: 500 });
     }
 
+    const openai = createOpenAI({ apiKey });
     const spec = PLATFORM_SPECS[body.platform];
     const defaultFramework =
       body.framework ??
@@ -54,7 +55,6 @@ export async function POST(req: Request) {
     const result = streamText({
       model: openai("gpt-4o"),
       prompt,
-      maxTokens: 1200,
     });
 
     let fullText = "";

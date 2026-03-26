@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import type { SocialPlatform, ContentType } from "@prisma/client";
-import { Button, Input, Textarea } from "@/components/ui";
+import { Button, Textarea } from "@/components/ui";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { PlatformSelector } from "@/components/content-strategy/platform-selector";

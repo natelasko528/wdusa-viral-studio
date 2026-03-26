@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import type { SocialPlatform, ContentPostStatus } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui";
@@ -27,13 +28,13 @@ const PLATFORM_LABELS: Record<SocialPlatform, string> = {
   youtube_shorts: "YT Shorts",
 };
 
-const STATUS_COLORS: Record<string, "default" | "warning" | "success" | "error"> = {
+const STATUS_COLORS: Record<string, "default" | "warning" | "success" | "danger" | "accent"> = {
   draft: "default",
   generating: "warning",
   ready: "success",
-  scheduled: "success",
+  scheduled: "accent",
   published: "success",
-  failed: "error",
+  failed: "danger",
 };
 
 type Props = {
@@ -93,7 +94,7 @@ export function SavedPosts({ refreshTrigger }: Props) {
               {post.renderJob.outputUrl.endsWith(".mp4") ? (
                 <video src={post.renderJob.outputUrl} className="h-full w-full object-cover" muted />
               ) : (
-                <img src={post.renderJob.outputUrl} alt="" className="h-full w-full object-cover" />
+                <Image src={post.renderJob.outputUrl} alt="" width={48} height={48} className="h-full w-full object-cover" unoptimized />
               )}
             </div>
           ) : (
@@ -105,7 +106,7 @@ export function SavedPosts({ refreshTrigger }: Props) {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-medium">{PLATFORM_LABELS[post.platform]}</span>
-              <Badge variant={STATUS_COLORS[post.status] ?? "default"} size="sm">
+              <Badge variant={STATUS_COLORS[post.status] ?? "default"}>
                 {post.status}
               </Badge>
             </div>

@@ -14,7 +14,7 @@ const createSchema = z.object({
   mediaUrls: z.array(z.string()).optional(),
   thumbnailUrl: z.string().optional(),
   renderJobId: z.string().optional(),
-  platformMeta: z.record(z.unknown()).optional(),
+  platformMeta: z.record(z.string(), z.unknown()).optional(),
   scheduledFor: z.string().optional(),
   calendarSlotId: z.string().optional(),
 });
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
         mediaUrls: body.mediaUrls ?? [],
         thumbnailUrl: body.thumbnailUrl ?? null,
         renderJobId: body.renderJobId ?? null,
-        platformMeta: body.platformMeta ?? undefined,
+        platformMeta: body.platformMeta ? (body.platformMeta as Record<string, string | number | boolean | null>) : undefined,
         scheduledFor: body.scheduledFor ? new Date(body.scheduledFor) : null,
         calendarSlotId: body.calendarSlotId ?? null,
         status: "draft",

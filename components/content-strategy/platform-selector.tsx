@@ -1,8 +1,9 @@
 "use client";
 
+import type { ReactElement } from "react";
 import type { SocialPlatform } from "@prisma/client";
 
-const PLATFORMS: { id: SocialPlatform; label: string; color: string; icon: JSX.Element }[] = [
+const PLATFORMS: { id: SocialPlatform; label: string; color: string; icon: ReactElement }[] = [
   {
     id: "instagram",
     label: "Instagram",

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { SocialPlatform, ContentType } from "@prisma/client";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui";
 
 type CalendarSlot = {

@@ -16,10 +16,7 @@ import {
   COPY_FRAMEWORKS,
   buildContentPrompt,
   pickHashtags,
-  formatCaptionForPlatform,
-  truncateToLimit,
   WEEKLY_CONTENT_CALENDAR,
-  type GeneratedContent,
 } from "@/lib/content-strategy";
 
 export const wdusaChatTools = {
