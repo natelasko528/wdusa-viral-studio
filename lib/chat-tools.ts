@@ -11,6 +11,13 @@ import {
   requireLocationId,
 } from "@/lib/ghl";
 import { scheduleRenderToGhl } from "@/lib/ghl-schedule-service";
+import {
+  PLATFORM_SPECS,
+  COPY_FRAMEWORKS,
+  buildContentPrompt,
+  pickHashtags,
+  WEEKLY_CONTENT_CALENDAR,
+} from "@/lib/content-strategy";
 
 export const wdusaChatTools = {
   search_kb: tool({
@@ -286,6 +293,142 @@ export const wdusaChatTools = {
       };
     },
   }),
+
+  get_platform_specs: tool({
+    description:
+      "Get platform-specific specs and best practices for social media content creation. Returns character limits, hashtag limits, content types, optimal post times, and tone guidance.",
+    inputSchema: z.object({
+      platform: z.enum(["instagram", "facebook", "tiktok", "twitter", "linkedin", "youtube_shorts"]),
+    }),
+    execute: async ({ platform }) => {
+      const spec = PLATFORM_SPECS[platform];
+      return {
+        platform: spec.id,
+        label: spec.label,
+        maxCaptionLength: spec.maxCaptionLength,
+        maxHashtags: spec.maxHashtags,
+        supportedContentTypes: spec.supportedContentTypes,
+        optimalPostTimes: spec.optimalPostTimes,
+        toneGuidance: spec.toneGuidance,
+        bestPractices: spec.bestPractices,
+        imageSpecs: spec.imageSpecs,
+        reelSpecs: spec.reelSpecs,
+      };
+    },
+  }),
+
+  generate_social_post: tool({
+    description:
+      "Generate a high-converting social media post for a specific platform. Uses AI to create platform-optimized copy with hooks, body text, CTAs, and hashtags using proven copy frameworks.",
+    inputSchema: z.object({
+      platform: z.enum(["instagram", "facebook", "tiktok", "twitter", "linkedin", "youtube_shorts"]),
+      contentType: z.enum(["reel", "image_post", "carousel", "story", "text_post"]),
+      topic: z.string(),
+      framework: z.enum(["aida", "pas", "bab", "hook_story_offer", "edu_value", "social_proof"]).optional(),
+      product: z.string().optional(),
+    }),
+    execute: async ({ platform, contentType, topic, framework, product }) => {
+      const fw = framework ??
+        COPY_FRAMEWORKS.find(
+          (f) => f.platforms.includes(platform) && f.bestFor.includes(contentType),
+        )?.id ?? "hook_story_offer";
+
+      const prompt = buildContentPrompt({
+        platform,
+        contentType,
+        framework: fw,
+        topic,
+        product,
+      });
+
+      const hashtags = pickHashtags(platform, product ?? "general");
+
+      return {
+        prompt,
+        suggestedHashtags: hashtags,
+        framework: fw,
+        platformTone: PLATFORM_SPECS[platform].toneGuidance,
+        maxChars: PLATFORM_SPECS[platform].maxCaptionLength,
+        message: "Use this prompt context to generate the social post copy. Apply the tone guidance and stay within character limits.",
+      };
+    },
+  }),
+
+  get_content_calendar: tool({
+    description:
+      "Get the recommended weekly content calendar with posting schedule, platform mix, content types, and topic suggestions.",
+    inputSchema: z.object({
+      platforms: z.array(z.enum(["instagram", "facebook", "tiktok", "twitter", "linkedin", "youtube_shorts"])).optional(),
+    }),
+    execute: async ({ platforms }) => {
+      let slots = WEEKLY_CONTENT_CALENDAR;
+      if (platforms?.length) {
+        slots = slots.filter((s) => (platforms as string[]).includes(s.platform));
+      }
+      return {
+        totalPostsPerWeek: slots.length,
+        slots: slots.map((s) => ({
+          day: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][s.dayOfWeek],
+          time: s.timeSlot,
+          platform: PLATFORM_SPECS[s.platform].label,
+          contentType: s.contentType,
+          topic: s.topicSuggestion,
+          framework: COPY_FRAMEWORKS.find((f) => f.id === s.framework)?.name ?? s.framework,
+        })),
+      };
+    },
+  }),
+
+  save_content_post: tool({
+    description:
+      "Save a generated social media post to the content library for later scheduling or publishing.",
+    inputSchema: z.object({
+      platform: z.enum(["instagram", "facebook", "tiktok", "twitter", "linkedin", "youtube_shorts"]),
+      contentType: z.enum(["reel", "image_post", "carousel", "story", "text_post"]),
+      hook: z.string().optional(),
+      body: z.string().optional(),
+      cta: z.string().optional(),
+      hashtags: z.array(z.string()).optional(),
+      caption: z.string(),
+    }),
+    execute: async ({ platform, contentType, hook, body, cta, hashtags, caption }) => {
+      const post = await prisma.contentPost.create({
+        data: {
+          platform,
+          contentType,
+          hook: hook ?? null,
+          body: body ?? null,
+          cta: cta ?? null,
+          hashtags: hashtags ?? [],
+          caption,
+          status: "draft",
+        },
+      });
+      return {
+        postId: post.id,
+        status: post.status,
+        message: "Post saved as draft. View in Content Strategy → Saved Posts.",
+      };
+    },
+  }),
+
+  list_copy_frameworks: tool({
+    description:
+      "List available copy frameworks for social media posts. Each framework has a specific structure optimized for different content types and platforms.",
+    inputSchema: z.object({}),
+    execute: async () => {
+      return {
+        frameworks: COPY_FRAMEWORKS.map((f) => ({
+          id: f.id,
+          name: f.name,
+          description: f.description,
+          structure: f.structure,
+          bestFor: f.bestFor,
+          platforms: f.platforms.map((p) => PLATFORM_SPECS[p].label),
+        })),
+      };
+    },
+  }),
 };
 
 export const WDUSA_SYSTEM_PROMPT = `You are the WDUSA Viral Studio assistant for Nate Lasko, a Window Depot USA Milwaukee sales consultant.
@@ -297,4 +440,18 @@ Products: windows (ProVia triple pane), doors, siding, roofing, flooring, bath. 
 
 When generating Reels copy, keep hooks short and punchy. For video without a Creatomate template, use start_render with mode renderscript.
 
-Always confirm destructive actions. For GHL scheduling, use future scheduleDate with status scheduled.`;
+Always confirm destructive actions. For GHL scheduling, use future scheduleDate with status scheduled.
+
+CONTENT STRATEGY CAPABILITIES:
+- Use get_platform_specs to understand platform-specific requirements before creating content
+- Use generate_social_post to build prompts for platform-optimized posts using proven copy frameworks (AIDA, PAS, Before-After-Bridge, Hook-Story-Offer, Educational Value, Social Proof)
+- Use get_content_calendar to recommend a weekly posting schedule across platforms
+- Use save_content_post to save generated content for later scheduling
+- Use list_copy_frameworks to explain available copywriting frameworks
+- Always customize content for each platform's tone, character limits, and best practices
+- For Instagram: visual-first, use carousel for education, reels under 30s, hashtags in separate block
+- For TikTok: raw, trend-aware, hook in 1-2 seconds, 3-5 hashtags only
+- For Twitter/X: sharp and punchy, every word counts, 280 char max
+- For LinkedIn: professional but personal, structured format, business stories
+- For Facebook: community-focused, conversational, ask questions
+- For YouTube Shorts: fast-paced, hook-heavy, under 30 seconds`;
