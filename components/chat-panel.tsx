@@ -105,11 +105,13 @@ export function ChatPanel({ open, onClose }: Props) {
             onChange={(e) => setInput(e.target.value)}
             rows={3}
             placeholder="Message…"
+            data-testid="chat-panel-input"
             className="mb-2 w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
           />
           <button
             type="submit"
             disabled={busy || !input.trim()}
+            data-testid="chat-panel-send"
             className="w-full rounded-lg bg-[var(--accent)] py-2 text-sm font-medium text-[var(--accent-text)] disabled:opacity-50"
           >
             {busy ? "Sending…" : "Send"}

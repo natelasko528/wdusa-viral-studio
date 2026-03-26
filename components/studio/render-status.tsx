@@ -19,7 +19,7 @@ type Props = {
 
 export function RenderStatus({ job, pollMsg, onRefresh }: Props) {
   return (
-    <div className="mt-4 space-y-3 rounded-lg border border-[var(--border)] bg-[var(--code-bg)] p-3">
+    <div className="mt-4 space-y-3 rounded-lg border border-[var(--border)] bg-[var(--code-bg)] p-3" data-testid="studio-render-status">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">

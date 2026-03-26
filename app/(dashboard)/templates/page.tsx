@@ -107,7 +107,7 @@ export default function TemplatesPage() {
           <div className="flex-1">
             <Input value={browserName} onChange={(e) => setBrowserName(e.target.value)} />
           </div>
-          <Button onClick={() => void createViaBrowser()}>
+          <Button data-testid="templates-browser-create" onClick={() => void createViaBrowser()}>
             Run create flow
           </Button>
         </div>

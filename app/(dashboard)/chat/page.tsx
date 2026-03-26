@@ -76,11 +76,13 @@ export default function ChatPage() {
           onChange={(e) => setInput(e.target.value)}
           rows={3}
           placeholder="Message…"
+          data-testid="chat-page-input"
           className="w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm"
         />
         <button
           type="submit"
           disabled={busy || !input.trim()}
+          data-testid="chat-page-send"
           className="rounded-lg bg-[var(--accent)] py-2.5 text-sm font-semibold text-[var(--accent-text)] disabled:opacity-50"
         >
           {busy ? "Sending…" : "Send"}

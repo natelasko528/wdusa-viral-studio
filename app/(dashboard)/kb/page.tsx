@@ -97,7 +97,7 @@ export default function KbPage() {
               placeholder="Keyword…"
             />
           </div>
-          <Button loading={loading} onClick={() => void load()}>
+          <Button loading={loading} data-testid="kb-search" onClick={() => void load()}>
             Search
           </Button>
         </div>

@@ -14,6 +14,8 @@ export function RenderModeToggle({ mode, onChange }: Props) {
         <button
           key={m}
           type="button"
+          data-testid={`studio-mode-${m}`}
+          aria-pressed={mode === m}
           onClick={() => onChange(m)}
           className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
             mode === m

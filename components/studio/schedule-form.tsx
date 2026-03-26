@@ -96,7 +96,7 @@ export function ScheduleForm({
           rows={2}
         />
 
-        <Button variant="secondary" className="w-full" onClick={onSchedule}>
+        <Button variant="secondary" className="w-full" data-testid="studio-schedule-post" onClick={onSchedule}>
           Schedule post
         </Button>
 

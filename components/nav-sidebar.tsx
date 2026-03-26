@@ -45,14 +45,19 @@ export function NavSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden w-[220px] shrink-0 flex-col gap-1 border-r border-[var(--border)] bg-[var(--surface-raised)] p-3 md:flex">
+    <aside className="hidden w-[220px] shrink-0 flex-col gap-1 border-r border-[var(--border)] bg-[var(--surface-raised)]/80 p-3 backdrop-blur-sm md:flex">
       <div className="mb-4 flex items-center gap-2 px-2 py-1">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent)] text-[10px] font-black text-[var(--accent-text)]">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--accent)] to-[#9a3412] text-[11px] font-extrabold text-[var(--accent-text)] shadow-sm dark:to-[#c2410c]">
           W
         </div>
-        <span className="text-xs font-semibold tracking-tight text-[var(--text-secondary)]">
-          Viral Studio
-        </span>
+        <div className="min-w-0 leading-tight">
+          <span className="block font-[family-name:var(--font-syne)] text-[13px] font-bold tracking-tight text-[var(--text-primary)]">
+            Viral Studio
+          </span>
+          <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--text-muted)]">
+            Window Depot
+          </span>
+        </div>
       </div>
       {NAV.map((item) => {
         const active =

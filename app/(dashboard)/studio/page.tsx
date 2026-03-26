@@ -86,12 +86,14 @@ export default function StudioPage() {
         setTemplates(list);
         setTemplateId((prev) => prev || list[0]?.id || "");
       } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
         console.error("Failed to load templates:", e);
+        toast.error(msg);
       } finally {
         setTemplatesLoading(false);
       }
     })();
-  }, []);
+  }, [toast]);
 
   const loadGhl = useCallback(async () => {
     try {
@@ -202,7 +204,14 @@ export default function StudioPage() {
           <Input label="CTA" value={cta} onChange={(e) => setCta(e.target.value)} />
         </div>
 
-        <Button className="mt-4 w-full" size="lg" loading={loading} onClick={() => void startRender()}>
+        <Button
+          className="mt-4 w-full"
+          size="lg"
+          loading={loading}
+          disabled={mode === "template" && (!templateId || templates.length === 0)}
+          data-testid="studio-start-render"
+          onClick={() => void startRender()}
+        >
           {loading ? "Starting…" : "Start render"}
         </Button>
 

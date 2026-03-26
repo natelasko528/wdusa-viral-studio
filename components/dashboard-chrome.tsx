@@ -16,8 +16,10 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-[var(--surface)] text-[var(--text-primary)]">
       <NavSidebar />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col pb-16 md:pb-0">
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--surface-raised)] px-4 md:px-6">
-          <span className="text-sm font-semibold tracking-tight md:hidden">WDUSA Viral Studio</span>
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--surface-raised)]/90 px-4 backdrop-blur-md md:px-6">
+          <span className="font-[family-name:var(--font-syne)] text-sm font-bold tracking-tight md:hidden">
+            WDUSA Viral Studio
+          </span>
           <span className="hidden md:block" />
           <ThemeToggle />
         </header>
@@ -27,6 +29,7 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
       {showChatFab ? (
         <button
           type="button"
+          data-testid="chat-fab"
           onClick={() => setChatOpen(true)}
           className="fixed z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent)] text-xs font-bold text-[var(--accent-text)] shadow-lg transition-transform hover:scale-105 active:scale-95 bottom-20 right-4 md:bottom-6 md:right-6 md:h-14 md:w-14 md:text-sm"
           aria-label="Open AI chat"
