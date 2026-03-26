@@ -102,6 +102,7 @@ model RenderJob {
   videoTemplateId    String?
   videoTemplate      VideoTemplate?   @relation(fields: [videoTemplateId], references: [id], onDelete: SetNull)
   scheduledPosts     ScheduledPost[]
+  contentPosts       ContentPost[]
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 }
@@ -127,4 +128,81 @@ model ScheduledPost {
   status       ScheduledPostStatus  @default(pending)
   rawResponse  Json?
   createdAt    DateTime             @default(now())
+}
+
+// ── Social Media Content Strategy ──────────────────────────────────
+
+enum SocialPlatform {
+  instagram
+  facebook
+  tiktok
+  twitter
+  linkedin
+  youtube_shorts
+}
+
+enum ContentType {
+  reel
+  image_post
+  carousel
+  story
+  text_post
+}
+
+enum ContentPostStatus {
+  draft
+  generating
+  ready
+  scheduled
+  published
+  failed
+}
+
+model ContentPost {
+  id              String            @id @default(cuid())
+  platform        SocialPlatform
+  contentType     ContentType
+  status          ContentPostStatus @default(draft)
+  campaignProfile String            @default("nate_landing")
+
+  hook            String?
+  body            String?           @db.Text
+  cta             String?
+  hashtags        String[]
+  caption         String?           @db.Text
+
+  mediaUrls       String[]
+  thumbnailUrl    String?
+  renderJobId     String?
+  renderJob       RenderJob?        @relation(fields: [renderJobId], references: [id], onDelete: SetNull)
+
+  platformMeta    Json?
+  scheduledFor    DateTime?
+  publishedAt     DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  calendarSlotId  String?
+  calendarSlot    ContentCalendarSlot? @relation(fields: [calendarSlotId], references: [id], onDelete: SetNull)
+
+  @@index([platform])
+  @@index([status])
+  @@index([campaignProfile])
+}
+
+model ContentCalendarSlot {
+  id              String            @id @default(cuid())
+  date            DateTime
+  dayOfWeek       Int
+  timeSlot        String
+  platform        SocialPlatform
+  contentType     ContentType
+  topic           String?
+  campaignProfile String            @default("nate_landing")
+  posts           ContentPost[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([date])
+  @@index([platform])
 }
